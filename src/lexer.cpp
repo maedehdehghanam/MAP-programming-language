@@ -13,75 +13,68 @@ bool isLetter(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-class Lexer {
-    private:
-        const char* bufferStart;
-        const char* bufferPtr;
+Token Lexer::next() {
+    while(*bufferPtr && isWhitespace(*bufferPtr)) bufferPtr++;
 
-    public:
-        Token next() {
-            while(*bufferPtr && isWhitespace(*bufferPtr)) bufferPtr++;
+    if (!*bufferPtr) return Token(EOI, "");
 
-            if (!*bufferPtr) return Token(EOI, "");
+    if (isLetter(*bufferPtr)) {
+        const char* end = bufferPtr + 1;
+        while(isLetter(*end)) end++;
 
-            if (isLetter(*bufferPtr)) {
-                const char* end = bufferPtr + 1;
-                while(isLetter(*end)) end++;
+        llvm::StringRef curTokenText(bufferPtr, end - bufferPtr);
 
-                llvm::StringRef curTokenText(bufferPtr, end - bufferPtr);
+        bufferPtr = end;
 
-                bufferPtr = end;
+        if (curTokenText == "type") return Token(KW_TYPE, "");
+        if (curTokenText == "int") return Token(KW_INT, "");
+        else return Token(ID, curTokenText);
+    } else if (isNumeric(*bufferPtr)) {
+        const char* end = bufferPtr + 1;
+        while(isNumeric(*end)) end++;
 
-                if (curTokenText == "type") return Token(KW_TYPE, "");
-                if (curTokenText == "int") return Token(KW_INT, "");
-                else return Token(ID, curTokenText);
-            } else if (isNumeric(*bufferPtr)) {
-                const char* end = bufferPtr + 1;
-                while(isNumeric(*end)) end++;
+        llvm::StringRef numberLiteral(bufferPtr, end - bufferPtr);
+        
+        bufferPtr = end;
 
-                llvm::StringRef numberLiteral(bufferPtr, end - bufferPtr);
-                
-                bufferPtr = end;
+        return Token(NUM, numberLiteral);
+    }
 
-                return Token(NUM, numberLiteral);
-            }
+    Token result(UNKNOWN, "");
 
-            Token result(UNKNOWN, "");
-
-            switch (*bufferPtr) {
-                case '+': {
-                    result = Token(PLUS, "");
-                    break;
-                }
-                case '-': {
-                    result = Token(STAR, "");
-                    break;
-                }
-                case '*': {
-                    result = Token(STAR, "");
-                    break;
-                } case '/': {
-                    result = Token(SLASH, "");
-                    break;
-                } case '(': {
-                    result = Token(LEFT_PAR, "");
-                    break;
-                } case ')': {
-                    result = Token(RIGHT_PAR, "");
-                    break;
-                } case ';': {
-                    result = Token(SEMICOLON, "");
-                    break;
-                } case '=': {
-                    result = Token(EQUAL, "");
-                    break;
-                } case ',': {
-                    result = Token(COMMA, "");
-                    break;
-                } default :
-            }
-
-            bufferPtr++;
-            return result;
+    switch (*bufferPtr) {
+        case '+': {
+            result = Token(PLUS, "");
+            break;
         }
-};
+        case '-': {
+            result = Token(STAR, "");
+            break;
+        }
+        case '*': {
+            result = Token(STAR, "");
+            break;
+        } case '/': {
+            result = Token(SLASH, "");
+            break;
+        } case '(': {
+            result = Token(LEFT_PAR, "");
+            break;
+        } case ')': {
+            result = Token(RIGHT_PAR, "");
+            break;
+        } case ';': {
+            result = Token(SEMICOLON, "");
+            break;
+        } case '=': {
+            result = Token(EQUAL, "");
+            break;
+        } case ',': {
+            result = Token(COMMA, "");
+            break;
+        } default :
+    }
+
+    bufferPtr++;
+    return result;
+}
