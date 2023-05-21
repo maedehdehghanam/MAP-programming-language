@@ -6,9 +6,9 @@
 #include <string>
 
 class AST;
-class Statemanet;
-class VarDec;
-class Assigment;
+class Statement;
+class VarDecl;
+class Assignment;
 class Expr;
 class Factor;
 class BinaryOp;
@@ -16,15 +16,15 @@ class TypeDecl;
 
 class ASTVisitor {
 public:
-  virtual void visit(AST &){} = 0;
-  virtual void visit(Expr &){} = 0;
+  virtual void visit(AST &) = 0;
+  virtual void visit(Expr &) = 0;
   virtual void visit(Factor &) = 0;
   virtual void visit(Statement &) = 0;
-  virtual void visit(Assigment &) =0;
-  virtual void visit(VarDec &) =0;
+  virtual void visit(Assignment &) =0;
+  virtual void visit(VarDecl &) =0;
 
   virtual void visit(BinaryOp &) = 0;
-  virtual void visit(WithDecl &) = 0;
+  // virtual void visit(VarDecl &) = 0;
 };
 
 class AST {
@@ -33,47 +33,60 @@ public:
   virtual void accept(ASTVisitor &V) = 0;
 };
 
-class Statement : public AST {
-public:
-  Statement() {
+class Goal : public AST{
+  std::vector<Statement*> statements;
 
-  }
-};
-class VarDecl : public Statement{
-    using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-    VarVector vector;
   public:
-    VarDecl(llvm::SmallVector<llvm::StringRef, 8> Vars): Vars(Vars) {}
-    VarVector::const_iterator begin() { return Vars.begin(); }
-    VarVector::const_iterator end() { return Vars.end(); }
+
+    Goal(std::vector<Statement*> statements) : statements{statements} {}
+
+    virtual void accept(ASTVisitor &V) override {
+        V.visit(*this);
+    }
+};
+
+class Statement : public AST {
+
+};
+
+class VarDecl : public Statement {
+    public:
+      using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
+    
+    private:
+      VarVector vector;
+
+  public:
+    VarDecl(llvm::SmallVector<llvm::StringRef, 8> Vars): vector(Vars) {}
+    VarVector::const_iterator begin() { return vector.begin(); }
+    VarVector::const_iterator end() { return vector.end(); }
     virtual void accept(ASTVisitor &V) override {
       V.visit(*this);
     }
-
-
-
 };
 
-class Assigment : public Statement{
+class Assignment : public Statement{
   Expr *E;
-  string id;
+  std::string id;
 
   public:
-    Assigment(Expr *E,sting id): E(E), id(id) {}
-    Expr get_Expr()
-    {
-      return Expr;
+    Assignment(Expr *E, std::string id): E(E), id(id) {}
+    
+    Expr* getExpr() {
+      return E;
     }
-    string get_id()
-    {
+
+    std::string getId() {
       return id;
     }
+
+    virtual void accept(ASTVisitor &V) override {
+      V.visit(*this);
+    }
 };
 
-class Expr : public Assigment{
+class Expr : public AST {
 
-  public:
-    Expr() {}
 };
 
 class Factor : public Expr {
