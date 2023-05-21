@@ -5,33 +5,71 @@ AST *Parser::parse() {
   expect(Token::eoi);
   return Res;
 }
-
-AST *Parser::parseCalc() {
-  Expr *E;
-  llvm::SmallVector<llvm::StringRef, 8> Vars;
-  if (Tok.is(Token::KW_with)) {
+VarDecl *Parser::parseVarDeclr()
+{
     advance();
-    if (expect(Token::ident))
+    if (expect(Token::KW_INT))
       goto _error;
     Vars.push_back(Tok.getText());
     advance();
-    while (Tok.is(Token::comma)) {
+    while (Tok.is(Token::COMMA)) {
       advance();
       if (expect(Token::ident))
         goto _error;
       Vars.push_back(Tok.getText());
       advance();
+    _error:
+      return nullptr;
+}
+Statemanet *Parser::parseStatement()
+{
+    if (Tok.is(Token::KW_TYPE)) {
+      VarDecler vardecler=parseVarDeclr();
+      if (vardecler == nullptr)
+      {
+        goto _error;
+      }
+
     }
-    if (consume(Token::colon))
+  }
+  if (Tok.is(Token::ID))
+  {
+    advance();
+    if (expect(Token::EQUAL))
       goto _error;
+    
   }
   E = parseExpr();
-  if (expect(Token::eoi))
-    goto _error;
   if (Vars.empty())
     return E;
   else
     return new WithDecl(Vars, E);
+
+  _error:
+    return nullptr;
+}
+AST *Parser::parseGoal() {
+  Expr *E;
+  llvm::SmallVector<llvm::StringRef, 8> Vars;
+  while (1)
+  {
+    Statement statemnt = parseStatment();
+    if (statemnt == nullptr)
+    {
+      goto _error;
+    }
+    if ((expect(Token::SEMICOLUMN)))
+    {
+      goto _error;
+    }
+    if ((!expect(Token::EOI)))
+    {
+      break;
+    }
+    
+  }
+  
+
 _error:
   while (Tok.getKind() != Token::eoi)
     advance();

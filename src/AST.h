@@ -3,6 +3,7 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include <string>
 
 class AST;
 class Statemanet;
@@ -38,21 +39,41 @@ public:
 
   }
 };
-class VarDec : public Statement{
+class VarDecl : public Statement{
+    using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
+    VarVector vector;
   public:
-    VarDec()
-    [
+    VarDecl(llvm::SmallVector<llvm::StringRef, 8> Vars): Vars(Vars) {}
+    VarVector::const_iterator begin() { return Vars.begin(); }
+    VarVector::const_iterator end() { return Vars.end(); }
+    virtual void accept(ASTVisitor &V) override {
+      V.visit(*this);
+    }
 
-      using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-      VarVector vector
-      
-    ]
+
 
 };
 
 class Assigment : public Statement{
-  public:
+  Expr *E;
+  string id;
 
+  public:
+    Assigment(Expr *E,sting id): E(E), id(id) {}
+    Expr get_Expr()
+    {
+      return Expr;
+    }
+    string get_id()
+    {
+      return id;
+    }
+};
+
+class Expr : public Assigment{
+
+  public:
+    Expr() {}
 };
 
 class Factor : public Expr {
@@ -93,20 +114,4 @@ public:
   }
 };
 
-class TypeDecl : public AST {
-  using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-  VarVector Vars;
-  Expr *E;
-
-public:
-  TypeDecl(llvm::SmallVector<llvm::StringRef, 8> Vars,
-           Expr *E)
-      : Vars(Vars), E(E) {}
-  VarVector::const_iterator begin() { return Vars.begin(); }
-  VarVector::const_iterator end() { return Vars.end(); }
-  Expr *getExpr() { return E; }
-  virtual void accept(ASTVisitor &V) override {
-    V.visit(*this);
-  }
-};
 #endif
