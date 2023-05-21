@@ -1,85 +1,94 @@
-#include "Parser.h"
+#include "parser.h"
 
 AST *Parser::parse() {
-  AST *Res = parseCalc();
-  expect(Token::eoi);
+  AST *Res = parseGoal();
+  expect(EOI);
   return Res;
 }
-VarDecl *Parser::parseVarDeclr()
-{
-    advance();
-    if (expect(Token::KW_INT))
-      goto _error;
-    Vars.push_back(Tok.getText());
-    advance();
-    while (Tok.is(Token::COMMA)) {
-      advance();
-      if (expect(Token::ident))
-        goto _error;
-      Vars.push_back(Tok.getText());
-      advance();
-    _error:
-      return nullptr;
-}
-Statemanet *Parser::parseStatement()
-{
-    if (Tok.is(Token::KW_TYPE)) {
-      VarDecler vardecler=parseVarDeclr();
-      if (vardecler == nullptr)
-      {
-        goto _error;
-      }
 
-    }
+AST *Parser::parseGoal() {
+  std::vector<Statement*> statements;
+
+  while (Tok.getKind() != EOI) {
+    Statement* curStat = parseStatement();
+    if (curStat == nullptr) goto _error;
+    else statements.push_back(curStat);
   }
-  if (Tok.is(Token::ID))
-  {
-    advance();
-    if (expect(Token::EQUAL))
-      goto _error;
-    
-  }
-  E = parseExpr();
-  if (Vars.empty())
-    return E;
-  else
-    return new WithDecl(Vars, E);
+
+  return new Goal(statements);
 
   _error:
+  while (Tok.getKind() != EOI) advance();
     return nullptr;
 }
-AST *Parser::parseGoal() {
-  Expr *E;
-  llvm::SmallVector<llvm::StringRef, 8> Vars;
-  while (1)
-  {
-    Statement statemnt = parseStatment();
-    if (statemnt == nullptr)
-    {
-      goto _error;
-    }
-    if ((expect(Token::SEMICOLUMN)))
-    {
-      goto _error;
-    }
-    if ((!expect(Token::EOI)))
-    {
-      break;
-    }
-    
-  }
-  
 
-_error:
-  while (Tok.getKind() != Token::eoi)
+Statement *Parser::parseStatement() {
+  if (Tok.getKind() == KW_TYPE) {
+    return parseVarDecl();
+  } else if (Tok.getKind() == ID) {
+    return parseAssignment();
+  } else {
+    while (Tok.getKind() != EOI) advance();
+    return nullptr;
+  }
+}
+
+VarDecl *Parser::parseVarDecl() {
+
+  VarDecl::VarVector vars;
+
+  if (expect(KW_TYPE)) {
+    goto _error;
+  }
+  advance();
+  if (expect(KW_INT)) {
+    goto _error;
+  }
+  advance();
+  if (expect(ID)) {
+    goto _error;
+  }
+  vars.push_back(Tok.getText());
+  advance();
+
+  while (Tok.getKind() == COMMA) {
     advance();
-  return nullptr;
+    if (expect(ID)) goto _error;
+    vars.push_back(Tok.getText());
+    advance();
+  }
+
+  if (expect(SEMICOLON)) goto _error;
+  
+  return new VarDecl(vars);
+
+  _error:
+  while (Tok.getKind() != EOI) advance();
+    return nullptr;
+}
+
+Assignment* Parser::parseAssignment() {
+  std::string id;
+  Expr *rhs = nullptr;
+
+  if (expect(ID)) goto _error;
+  advance();
+  if (expect(EQUAL)) goto _error;
+  advance();
+
+  rhs = parseExpr();
+
+  return new Assignment(rhs, id);
+
+  _error:
+  while (Tok.getKind() != EOI) advance();
+    return nullptr;
 }
 
 Expr *Parser::parseExpr() {
   Expr *Left = parseTerm();
-  while (Tok.isOneOf(Token::plus, Token::minus)) {
-    BinaryOp::Operator Op = Tok.is(Token::plus)
+  while (Tok.getKind() == PLUS || Tok.getKind() == MINUS) {
+    BinaryOp::Operator Op = Tok.getKind() == PLUS
                                 ? BinaryOp::Plus
                                 : BinaryOp::Minus;
     advance();
@@ -91,9 +100,9 @@ Expr *Parser::parseExpr() {
 
 Expr *Parser::parseTerm() {
   Expr *Left = parseFactor();
-  while (Tok.isOneOf(Token::star, Token::slash)) {
+  while (Tok.getKind() == STAR || Tok.getKind() == SLASH) {
     BinaryOp::Operator Op =
-        Tok.is(Token::star) ? BinaryOp::Mul : BinaryOp::Div;
+        Tok.getKind() == STAR ? BinaryOp::Mul : BinaryOp::Div;
     advance();
     Expr *Right = parseFactor();
     Left = new BinaryOp(Op, Left, Right);
@@ -104,22 +113,22 @@ Expr *Parser::parseTerm() {
 Expr *Parser::parseFactor() {
   Expr *Res = nullptr;
   switch (Tok.getKind()) {
-  case Token::number:
+  case NUM:
     Res = new Factor(Factor::Number, Tok.getText());
     advance(); break;
-  case Token::ident:
+  case ID:
     Res = new Factor(Factor::Ident, Tok.getText());
     advance(); break;
-  case Token::l_paren:
+  case LEFT_PAR:
     advance();
     Res = parseExpr();
-    if (!consume(Token::r_paren)) break;
+    if (!consume(RIGHT_PAR)) break;
   default:
     if (!Res)
       error();
-    while (!Tok.isOneOf(Token::r_paren, Token::star,
-                        Token::plus, Token::minus,
-                        Token::slash, Token::eoi))
+    while (!(Tok.getKind() == RIGHT_PAR || Tok.getKind() == STAR,
+                        Tok.getKind() == PLUS || Tok.getKind() == MINUS ||
+                        Tok.getKind() == SLASH || Tok.getKind() == EOI))
       advance();
   }
   return Res;
