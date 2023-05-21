@@ -14,6 +14,8 @@ enum TokenKind {
     MINUS,
     STAR,
     SLASH,
+    EQUAL,
+    SEMICOLON,
     EOI,
     UNKNOWN,
 };
