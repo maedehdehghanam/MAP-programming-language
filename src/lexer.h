@@ -22,7 +22,7 @@ enum TokenKind {    // Define an enumeration for different token kinds
 
     MINUS,     // Minus operator
 
-    STAR,      // Asterisk operator
+    STAR,      // * operator
 
     SLASH,     // Slash operator
 
