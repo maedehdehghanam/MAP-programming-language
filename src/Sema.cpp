@@ -30,7 +30,7 @@ public:
 			else
 				HasError = true;
 		};
-		virtual void visit(WithDecl &Node) override {
+		virtual void visit(VarDecl &Node) override {
 			for (auto I = Node.begin(), E = Node.end(); I != E;
 					++I) {
 				if (!Scope.insert(*I).second)
