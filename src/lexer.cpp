@@ -72,7 +72,8 @@ Token Lexer::next() {
         } case ',': {
             result = Token(COMMA, "");
             break;
-        } default :
+        } default:
+            break;
     }
 
     bufferPtr++;
